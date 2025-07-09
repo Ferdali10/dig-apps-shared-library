@@ -1,18 +1,17 @@
-def call(String buildTool, Map config = [:]) {
+def call(Map config = [:]) {
+    // Extrait le buildTool
+    def buildTool = config.buildTool
+    if (!buildTool) {
+        error "Paramètre 'buildTool' obligatoire"
+    }
+
     stage('🏗 Build Spring Boot + MySQL') {
         script {
-            // Vérification du fichier de config DB
-            def dbConfigFile = 'src/main/resources/application.properties'
-            if (!fileExists(dbConfigFile)) {
-                error "Fichier de configuration DB introuvable: ${dbConfigFile}"
-            }
-
+            // vérifications
             switch(buildTool.toLowerCase()) {
                 case 'maven':
-                    // Construction de la commande Maven
                     def mvnCmd = "./mvnw clean package"
 
-                    // Ajout d'arguments personnalisés (ex: -Pprod, profils, etc)
                     if (config.args) {
                         mvnCmd += " ${config.args}"
                     } else if (config.activeProfile) {
@@ -21,23 +20,22 @@ def call(String buildTool, Map config = [:]) {
                         echo "[INFO] Utilisation de la configuration par défaut (sans profil spécifique)"
                     }
 
-                    // Gestion des tests
                     if (config.skipDbTests) {
-                        mvnCmd += " -Dtest=!*RepositoryTest,*ServiceTest" // Exclut certains tests
+                        mvnCmd += " -Dtest=!*RepositoryTest,*ServiceTest"
                     } else if (config.skipAllTests) {
                         mvnCmd += " -DskipTests"
                     }
 
-                    // S'assurer que ./mvnw est exécutable
+                    // Assure les droits d'exécution sur mvnw
                     sh 'chmod +x ./mvnw'
 
-                    // Exécution de la commande
+                    // Lancement de la commande Maven
                     sh mvnCmd
 
-                    // Archive des fichiers jar générés
+                    // Archivage des jars générés
                     archiveArtifacts artifacts: 'target/*.jar,target/libs/*.jar', fingerprint: true
 
-                    // Vérification qu'un JAR a bien été généré
+                    // Vérification du JAR généré
                     if (!fileExists('target/*.jar')) {
                         error "Erreur : Aucun JAR généré. Vérifiez les logs Maven."
                     }
@@ -54,5 +52,6 @@ def call(String buildTool, Map config = [:]) {
         }
     }
 }
+
 
 
