@@ -1,7 +1,8 @@
-def call(String buildTool, Map config = [:]) {
+def call(Map config = [:]) {
+    def buildTool = config.buildTool ?: 'maven'
+
     stage('🏗 Build Spring Boot + MySQL') {
         script {
-            // Vérification des fichiers de config
             def dbConfigFile = 'src/main/resources/application.properties'
             if (!fileExists(dbConfigFile)) {
                 error "Fichier de configuration DB introuvable: ${dbConfigFile}"
@@ -9,30 +10,28 @@ def call(String buildTool, Map config = [:]) {
 
             switch(buildTool.toLowerCase()) {
                 case 'maven':
-                    // Construction de la commande Maven
                     def mvnCmd = "./mvnw clean package"
-                    
-                    // Gestion des environnements (dev/test/prod)
+
                     if (config.activeProfile) {
                         mvnCmd += " -Dspring.profiles.active=${config.activeProfile}"
                     } else {
                         echo "[INFO] Utilisation de la configuration par défaut (sans profil spécifique)"
                     }
-                    
-                    // Gestion des tests
+
                     if (config.skipDbTests) {
-                        mvnCmd += " -Dtest=!*RepositoryTest,*ServiceTest" // Exclut les tests DB
+                        mvnCmd += " -Dtest=!*RepositoryTest,*ServiceTest"
                     } else if (config.skipAllTests) {
                         mvnCmd += " -DskipTests"
                     }
-                    
-                    // Exécution
+
+                    if (config.args) {
+                        mvnCmd += " ${config.args}"
+                    }
+
                     sh mvnCmd
-                    
-                    // Archive sélective
+
                     archiveArtifacts artifacts: 'target/*.jar,target/libs/*.jar', fingerprint: true
-                    
-                    // Vérification du JAR
+
                     if (!fileExists('target/*.jar')) {
                         error "Erreur : Aucun JAR généré. Vérifiez les logs Maven."
                     }
@@ -49,3 +48,4 @@ def call(String buildTool, Map config = [:]) {
         }
     }
 }
+
