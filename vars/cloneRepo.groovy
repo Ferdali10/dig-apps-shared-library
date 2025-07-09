@@ -1,15 +1,12 @@
 def call(Map config = [:]) {
-    // Validation
     if (!config.repoUrl && !config.containsKey('branch')) {
         error "Paramètres manquants : repoUrl ou branch doivent être spécifiés"
     }
 
-    // Warning pour les dépôts privés
     if (config.repoUrl?.contains('github.com') && !config.credentialsId) {
         echo "[WARNING] Aucun credential spécifié pour un dépôt GitHub - risque d'échec si privé"
     }
 
-    // Logging
     echo """[DEBUG] Configuration du clone :
     - URL: ${config.repoUrl ?: 'Défaut (projectSpring)'}
     - Branche: ${config.branch ?: 'master'}
@@ -32,7 +29,7 @@ def call(Map config = [:]) {
                                 ],
                                 [$class: 'CleanBeforeCheckout'],
                                 [$class: 'CleanCheckout'],
-                                [$class: 'SubmoduleOption',  // Optionnel
+                                [$class: 'SubmoduleOption',
                                  disableSubmodules: false,
                                  parentCredentials: true
                                 ]
@@ -57,3 +54,4 @@ def call(Map config = [:]) {
         }
     }
 }
+
