@@ -6,13 +6,17 @@ def call(Map config = [:]) {
     def projectUrl = config.projectUrl ?: "${sonarHost}/projects"
 
     echo "📊 Génération du rapport SonarQube pour le projet: ${projectKey}"
+    echo "🔗 URLs de debug:"
+    echo "   - sonarHost: ${sonarHost}"
+    echo "   - projectUrl: ${projectUrl}"
+    echo "   - Dashboard URL: http://172.201.153.226:9000/dashboard?id=${projectKey}"
 
     // Récupération des données SonarQube
     def metrics = getSonarMetrics(sonarHost, projectKey, sonarToken)
     def issues = getSonarIssues(sonarHost, projectKey, sonarToken)
     def qualityGateDetails = getQualityGateStatus(sonarHost, projectKey, sonarToken)
 
-    // Génération du rapport HTML
+    // Génération du rapport HTML avec des liens absolus et debug
     def htmlContent = """
     <!DOCTYPE html>
     <html lang="fr">
@@ -147,16 +151,34 @@ def call(Map config = [:]) {
                 padding: 15px 30px;
                 margin: 10px;
                 background: linear-gradient(135deg, #3498db, #2980b9);
-                color: white;
-                text-decoration: none;
+                color: white !important;
+                text-decoration: none !important;
                 border-radius: 25px;
                 font-weight: 500;
                 transition: all 0.3s ease;
                 box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+                cursor: pointer;
             }
             .btn:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+                color: white !important;
+                text-decoration: none !important;
+            }
+            .btn:visited {
+                color: white !important;
+            }
+            .debug-info {
+                background: #e8f4fd;
+                padding: 20px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                font-family: monospace;
+                font-size: 14px;
+            }
+            .debug-info h4 {
+                color: #2c3e50;
+                margin-top: 0;
             }
             .timestamp {
                 text-align: center;
@@ -165,6 +187,21 @@ def call(Map config = [:]) {
                 font-style: italic;
             }
         </style>
+        <script>
+            function openSonarDashboard() {
+                window.open('http://172.201.153.226:9000/dashboard?id=${projectKey}', '_blank');
+                return false;
+            }
+            
+            function openSonarProjects() {
+                window.open('http://172.201.153.226:9000/projects', '_blank');
+                return false;
+            }
+            
+            // Debug : log des URLs au chargement de la page
+            console.log('Dashboard URL:', 'http://172.201.153.226:9000/dashboard?id=${projectKey}');
+            console.log('Projects URL:', 'http://172.201.153.226:9000/projects');
+        </script>
     </head>
     <body>
         ${generateReportContent(projectKey, sonarHost, projectUrl, qualityGate, qualityGateDetails, metrics, issues)}
@@ -175,6 +212,11 @@ def call(Map config = [:]) {
     // Écriture et publication du rapport
     def reportFileName = "sonar-report-${projectKey}.html"
     writeFile file: reportFileName, text: htmlContent
+    
+    // Vérification du contenu du fichier généré
+    def fileContent = readFile file: reportFileName
+    echo "📝 Taille du fichier généré: ${fileContent.length()} caractères"
+    echo "🔍 Les URLs dans le fichier contiennent-elles '172.201.153.226'? ${fileContent.contains('172.201.153.226')}"
     
     publishHTML([
         allowMissing: false,
@@ -254,6 +296,14 @@ private def generateReportContent(projectKey, sonarHost, projectUrl, qualityGate
             </div>
             
             <div class="content">
+                <div class="debug-info">
+                    <h4>🛠️ Informations de Debug</h4>
+                    <p><strong>Dashboard URL:</strong> http://172.201.153.226:9000/dashboard?id=${projectKey}</p>
+                    <p><strong>Projects URL:</strong> http://172.201.153.226:9000/projects</p>
+                    <p><strong>Projet:</strong> ${projectKey}</p>
+                    <p><strong>Timestamp:</strong> ${currentDate}</p>
+                </div>
+                
                 <div class="quality-gate ${qualityGateClass}">
                     <h2>Quality Gate: ${qualityGateText}</h2>
                     <p>Statut de la qualité du code</p>
@@ -306,12 +356,33 @@ private def generateReportContent(projectKey, sonarHost, projectUrl, qualityGate
                 
                 <div class="links-section">
                     <h3>🔗 Liens Utiles</h3>
-                    <a href="http://172.201.153.226:9000/dashboard?id=${projectKey}" class="btn" target="_blank">
-                        📊 Voir le Dashboard du Projet
+                    
+                    <!-- Méthode 1: Lien standard -->
+                    <a href="http://172.201.153.226:9000/dashboard?id=${projectKey}" class="btn" target="_blank" rel="noopener noreferrer">
+                        📊 Dashboard du Projet (Lien direct)
                     </a>
-                    <a href="http://172.201.153.226:9000/projects" class="btn" target="_blank">
-                        📁 Liste des Projets SonarQube
+                    
+                    <!-- Méthode 2: Bouton avec JavaScript -->
+                    <button type="button" class="btn" onclick="openSonarDashboard()">
+                        📊 Dashboard du Projet (JavaScript)
+                    </button>
+                    
+                    <!-- Méthode 3: Lien vers les projets -->
+                    <a href="http://172.201.153.226:9000/projects" class="btn" target="_blank" rel="noopener noreferrer">
+                        📁 Liste des Projets
                     </a>
+                    
+                    <!-- Méthode 4: Bouton avec JavaScript pour projets -->
+                    <button type="button" class="btn" onclick="openSonarProjects()">
+                        📁 Liste des Projets (JavaScript)
+                    </button>
+                    
+                    <!-- URLs copiables -->
+                    <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 8px; text-align: left;">
+                        <h4>📋 URLs à copier-coller :</h4>
+                        <p><strong>Dashboard:</strong> <code style="background: #f4f4f4; padding: 2px 4px;">http://172.201.153.226:9000/dashboard?id=${projectKey}</code></p>
+                        <p><strong>Projets:</strong> <code style="background: #f4f4f4; padding: 2px 4px;">http://172.201.153.226:9000/projects</code></p>
+                    </div>
                 </div>
                 
                 <div class="timestamp">
