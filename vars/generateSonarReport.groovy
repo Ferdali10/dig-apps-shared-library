@@ -306,11 +306,11 @@ private def generateReportContent(projectKey, sonarHost, projectUrl, qualityGate
                 
                 <div class="links-section">
                     <h3>🔗 Liens Utiles</h3>
-                    <a href="${sonarHost}/dashboard?id=${projectKey}" class="btn" target="_blank">
-                        📊 Voir le Dashboard SonarQube
+                    <a href="http://172.201.153.226:9000/dashboard?id=${projectKey}" class="btn" target="_blank">
+                        📊 Voir le Dashboard du Projet
                     </a>
-                    <a href="${projectUrl}" class="btn" target="_blank">
-                        📁 Liste des Projets
+                    <a href="http://172.201.153.226:9000/projects" class="btn" target="_blank">
+                        📁 Liste des Projets SonarQube
                     </a>
                 </div>
                 
