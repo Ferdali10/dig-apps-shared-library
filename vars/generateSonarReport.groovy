@@ -9,7 +9,7 @@ def call(Map config = [:]) {
     echo "🔗 URLs de debug:"
     echo "   - sonarHost: ${sonarHost}"
     echo "   - projectUrl: ${projectUrl}"
-    echo "   - Dashboard URL: http://172.201.153.226:9000/dashboard?id=${projectKey}"
+    echo "   - Dashboard URL: http://4.210.176.144:9000/dashboard?id=${projectKey}"
 
     // Récupération des données SonarQube
     def metrics = getSonarMetrics(sonarHost, projectKey, sonarToken)
